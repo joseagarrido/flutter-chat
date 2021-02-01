@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:realchat/models/usuario.dart';
 import 'package:realchat/services/auth_service.dart';
+import 'package:realchat/services/chat_service.dart';
+import 'package:realchat/services/socket_service.dart';
+import 'package:realchat/services/usuarios_service.dart';
 
 class UsuariosPage extends StatefulWidget {
   @override
@@ -10,18 +13,24 @@ class UsuariosPage extends StatefulWidget {
 }
 
 class _UsuariosPageState extends State<UsuariosPage> {
+final usuariosService = new UsuariosService();
+
+
+
 RefreshController _refreshController =
       RefreshController(initialRefresh: false);
+  List<Usuario> usuarios = [];
 
-  final usuarios = [
-    Usuario(uid: '1', nombre: 'maria', email: 'maria@correo.es', onLine: true),
-    Usuario(uid: '2', nombre: 'pepe', email: 'pep@correo.es', onLine: false),
-    Usuario(uid: '3', nombre: 'rafa', email: 'rafa@correo.es', onLine: true),
-    Usuario(uid: '4', nombre: 'clara', email: 'clara@correo.es', onLine: true),
-  ];
+  @override
+  void initState() { 
+    this._cargarUsuarios();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -33,7 +42,7 @@ RefreshController _refreshController =
         leading: IconButton(
           icon: Icon(Icons.exit_to_app, color: Colors.black87),
           onPressed: () {
-            //TODO: Cerrar sockets
+            socketService.disconnect();
             AuthService.deleteToken();
             Navigator.pushReplacementNamed(context, 'login');
           },
@@ -42,7 +51,9 @@ RefreshController _refreshController =
           Container(
             margin: EdgeInsets.only(right: 10),
             //child: Icon(Icons.check_circle, color:Colors.blue[400]),
-            child: Icon(Icons.offline_bolt, color: Colors.red),
+            child: (socketService.serverStatus== ServerStatus.Offline) 
+              ? Icon(Icons.offline_bolt, color: Colors.red)
+              :Icon(Icons.check_circle, color:Colors.blue[400]),
           ),
         ],
       ),
@@ -87,13 +98,21 @@ RefreshController _refreshController =
 
           ),
         ),
+        onTap: () {
+          final chatService  = Provider.of<ChatService>(context, listen: false);
+          chatService.usuarioPara = usuario;
+          Navigator.pushNamed(context, 'chat');
+        },
         );
   }
 
 
   _cargarUsuarios () async{
     // monitor network fetch
-    await Future.delayed(Duration(milliseconds: 1000));
+    
+    this.usuarios  =await usuariosService.getUsuarios();
+    setState(() { });
+    //await Future.delayed(Duration(milliseconds: 1000));
     // if failed,use refreshFailed()
     _refreshController.refreshCompleted();
   }

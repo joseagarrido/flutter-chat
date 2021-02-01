@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:realchat/helpers/mostrar_alerta.dart';
 import 'package:realchat/services/auth_service.dart';
+import 'package:realchat/services/socket_service.dart';
 import 'package:realchat/widget/btn_azul.dart';
 import 'package:realchat/widget/custom_input.dart';
 import 'package:realchat/widget/label.dart';
@@ -54,6 +55,7 @@ class __FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -89,7 +91,7 @@ class __FormState extends State<_Form> {
                       final registerOK = await authService.register(this.nameCtrl.text.trim(), this.emailCtrl.text.trim(),
                           this.passCtrl.text.trim());
                       if (registerOK==true) {
-                        //conectar a socket server
+                        socketService.connect();
                         Navigator.pushReplacementNamed(context, 'usuarios');
                       } else {
                         mostrarAlerta(context, 'Registro incorrecto', registerOK);
